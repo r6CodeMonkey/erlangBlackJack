@@ -3,4 +3,4 @@
 
 create_player(Pid, Balance) -> {Pid, Balance}.
 
-update_balance({Pid, Balance}, Amount) -> {Pid, Balance + Amount}. 
+update_balance(Balance, Amount) -> Balance + Amount. 
