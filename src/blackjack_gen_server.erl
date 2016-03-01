@@ -4,12 +4,14 @@
 -export([join_table/0, enter_game/2, hit/1, stand/1, double_down/2, surrender/1, split/1, leave/1]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
+-include("blackjack_records.hrl").
+
 join_table() ->
 gen_server:start_link(?MODULE, [], []).
 
-%%% start game by placing a wager...a sync call wait for dealer to start 
+%%% start game by placing a wager and receive 2 cards..
 enter_game(Pid, Wager) ->
-gen_server:cast(Pid, {enter, wager}).
+gen_server:call(Pid, {enter, Wager}).
 
 %%% we want a card 
 hit(Pid) ->
@@ -21,7 +23,7 @@ gen_server:cast(Pid, {stand}).
 
 %%% increase wager on bet, receive 1 more card
 double_down(Pid, Wager) ->
-gen_server:call(Pid, {double_down, wager}).
+gen_server:call(Pid, {double_down, Wager}).
 
 %%% give up and get half stake back
 surrender(Pid) ->
@@ -33,23 +35,36 @@ gen_server:call(Pid, {split}).
 
 leave(Pid) -> gen_server:call(Pid, terminate).
 
-
+%% make one player game for time being...
 
 %%% Server functions
-init([]) -> {ok, []}.
+init([]) -> {ok, blackjack_table:start()}.
 
-handle_call({hit, wager}, _From, Cards) -> 
-io:format("hit call ~n", []);
-handle_call({surrender, wager}, _From, Cards) -> 
+handle_call({enter, Wager}, _From, {Cards, Player}) ->
+   [D1,D2|Deck] = Cards,
+   NewPlayer = blackjack_player:create_player(_From, Wager),
+   UpdatedPlayer = NewPlayer#player{handValue=blackjack_deck:get_card_value(D1#card.value)+blackjack_deck:get_card_value(D2#card.value)
+	, alternateValue=blackjack_deck:get_alternate_card_value(D1#card.value)+blackjack_deck:get_alternate_card_value(D2#card.value)},
+   {reply,[D1|D2], {Deck, UpdatedPlayer}};
+handle_call({hit}, _From, {Cards, Player}) -> 
+Card = hd(Cards),
+Value = blackjack_deck:get_card_value(Card#card.value)+Player#player.handValue,
+Value2 = blackjack_deck:get_alternate_card_value(Card#card.value)+Player#player.alternateValue,
+	UpdatedPlayer = Player#player{handValue=Value, alternateValue=Value2},
+if UpdatedPlayer#player.handValue > 21, UpdatedPlayer#player.alternateValue > 21  -> {reply, "Bust - Dealer Wins", {Cards, UpdatedPlayer}};
+   true -> {reply, {io:format("hand value ~p, alternate value ~p ~n",[UpdatedPlayer#player.handValue,UpdatedPlayer#player.alternateValue]), Card}, {tl(Cards), UpdatedPlayer}}
+end;
+
+handle_call({surrender, wager}, _From, {Cards, Player}) -> 
 io:format("surrender call ~n", []);
-handle_call({split, wager}, _From, Cards) -> 
+handle_call({split, wager}, _From, {Cards, Player}) -> 
 io:format("split call ~n", []);
-handle_call({double_down, wager}, _From, Cards) -> 
-io:format("double down call ~n", []).
-
-handle_cast({enter, Wager}, Cards) ->
-io:format("enter cast ~n", []);
-handle_cast({stand, Wager}, Cards) ->
+handle_call({double_down, wager}, _From, {Cards, Player}) -> 
+io:format("double down call ~n", []);
+handle_call(terminate,_From, {Cards, Player}) ->
+{stop, normal, ok, Cards}.
+  
+handle_cast({stand}, {Cards, Player}) ->
 io:format("stand cast ~n", []).
 
 handle_info(Msg, Wager) ->
@@ -60,7 +75,7 @@ code_change(_OldVsn, State, _Extra) ->
     %% but will not be used. Only a version on the next
     {ok, State}. 
 
-terminate(normal, Wager) ->
+terminate(normal, Cards) ->
 [io:format("Player has left  table~n",[])],
 ok.
 
