@@ -19,6 +19,7 @@ create_suit([Value|Rest], Suit, Acc) ->
 
 shuffle([],Deck) -> lists:reverse(Deck);
 shuffle([Shuffle|Tail], Deck) ->
+random:seed(now()),
 %% need to randomly shuffle cards..we dont want to split at 52 clearly. hence take 1 off.
 {First, Second} = lists:split(random:uniform(length(Deck)-1), Deck),
 {Third, Fourth} = lists:split(random:uniform(length(First)), First),
