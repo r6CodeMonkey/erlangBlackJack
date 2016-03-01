@@ -68,7 +68,7 @@ handle_call({double_down, wager}, _From, {Cards, Dealer, Player}) ->
  
 handle_call({stand}, _From, {Cards, Dealer, Player}) ->
  %% dealer now needs to deal two cards...in fact they should of done that first...
- io:format("stand cast ~n", []);
+ io:format("stand cast ~n", []); 
  
 handle_call(terminate,_From, {Cards, Dealer, Player}) ->
  {stop, normal, ok, Cards}.
