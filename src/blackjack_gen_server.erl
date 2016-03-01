@@ -19,7 +19,7 @@ gen_server:call(Pid, {hit}).
 
 %%% we are sticking, asynch call
 stand(Pid) ->
-gen_server:cast(Pid, {stand}).
+gen_server:call(Pid, {stand}).
 
 %%% increase wager on bet, receive 1 more card
 double_down(Pid, Wager) ->
@@ -40,32 +40,41 @@ leave(Pid) -> gen_server:call(Pid, terminate).
 %%% Server functions
 init([]) -> {ok, blackjack_table:start()}.
 
-handle_call({enter, Wager}, _From, {Cards, Player}) ->
-   [D1,D2|Deck] = Cards,
+handle_call({enter, Wager}, _From, {Cards, Dealer, Player}) ->
+   [D1,D2, D3, D4|Deck] = Cards,
    NewPlayer = blackjack_player:create_player(_From, Wager),
    UpdatedPlayer = NewPlayer#player{handValue=blackjack_deck:get_card_value(D1#card.value)+blackjack_deck:get_card_value(D2#card.value)
 	, alternateValue=blackjack_deck:get_alternate_card_value(D1#card.value)+blackjack_deck:get_alternate_card_value(D2#card.value)},
-   {reply,[D1|D2], {Deck, UpdatedPlayer}};
-handle_call({hit}, _From, {Cards, Player}) -> 
-Card = hd(Cards),
-Value = blackjack_deck:get_card_value(Card#card.value)+Player#player.handValue,
-Value2 = blackjack_deck:get_alternate_card_value(Card#card.value)+Player#player.alternateValue,
+   {reply,io:format("Your cards ~p,~p~nDealer cards ~p,~p~n", [D1, D2, D3, D4]), {Deck,[D3|D4], UpdatedPlayer}};
+
+handle_call({hit}, _From, {Cards, Dealer, Player}) -> 
+ Card = hd(Cards),
+ Value = blackjack_deck:get_card_value(Card#card.value)+Player#player.handValue,
+ Value2 = blackjack_deck:get_alternate_card_value(Card#card.value)+Player#player.alternateValue,
 	UpdatedPlayer = Player#player{handValue=Value, alternateValue=Value2},
-if UpdatedPlayer#player.handValue > 21, UpdatedPlayer#player.alternateValue > 21  -> {reply, "Bust - Dealer Wins", {Cards, UpdatedPlayer}};
-   true -> {reply, {io:format("hand value ~p, alternate value ~p ~n",[UpdatedPlayer#player.handValue,UpdatedPlayer#player.alternateValue]), Card}, {tl(Cards), UpdatedPlayer}}
+ if UpdatedPlayer#player.handValue > 21, UpdatedPlayer#player.alternateValue > 21  -> {reply, "Bust - Dealer Wins", {Cards,Dealer, UpdatedPlayer}};
+    UpdatedPlayer#player.handValue == 21; UpdatedPlayer#player.alternateValue == 21 -> {reply, io:format("BlackJack - You Win ~p Winnings~n",[UpdatedPlayer#player.balance*2]), {Cards, Dealer, UpdatedPlayer}};
+   true -> {reply, {io:format("hand value ~p, alternate value ~p ~n",[UpdatedPlayer#player.handValue,UpdatedPlayer#player.alternateValue]), Card}, {tl(Cards),Dealer, UpdatedPlayer}}
 end;
 
-handle_call({surrender, wager}, _From, {Cards, Player}) -> 
-io:format("surrender call ~n", []);
-handle_call({split, wager}, _From, {Cards, Player}) -> 
-io:format("split call ~n", []);
-handle_call({double_down, wager}, _From, {Cards, Player}) -> 
-io:format("double down call ~n", []);
-handle_call(terminate,_From, {Cards, Player}) ->
-{stop, normal, ok, Cards}.
+handle_call({surrender}, _From, {Cards, Dealer, Player}) -> 
+ {reply, io:format("Returned ~p ~n", [Player#player.balance/2]), {Cards, Dealer, Player}};
+
+handle_call({split, wager}, _From, {Cards, Dealer, Player}) -> 
+ io:format("split call ~n", []);
+
+handle_call({double_down, wager}, _From, {Cards, Dealer, Player}) -> 
+ io:format("double down call ~n", []);
+ 
+handle_call({stand}, _From, {Cards, Dealer, Player}) ->
+ %% dealer now needs to deal two cards...in fact they should of done that first...
+ io:format("stand cast ~n", []);
+ 
+handle_call(terminate,_From, {Cards, Dealer, Player}) ->
+ {stop, normal, ok, Cards}.
   
-handle_cast({stand}, {Cards, Player}) ->
-io:format("stand cast ~n", []).
+handle_cast({value}, {Cards, Dealer, Player}) ->  io:format("stand cast ~n", []) .  
+
 
 handle_info(Msg, Wager) ->
 io:format("unexpected message: ~p~n", [Msg]).
