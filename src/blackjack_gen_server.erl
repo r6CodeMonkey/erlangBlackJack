@@ -92,7 +92,7 @@ if UpdatedDealer#player.handValue > 21 -> FinalDealer = UpdatedDealer#player{han
   if FinalDealer#player.handValue > 21 -> {reply, io:format("You win ~p winnings,Dealer Cards ~p~nDealer went bust~n", [UpdatedPlayer#player.balance*2, DealerCards]), {Cards, FinalDealer, UpdatedPlayer}};
      UpdatedPlayer#player.handValue > FinalDealer#player.handValue -> {reply, io:format("Dealer Cards ~p~nYou win ~p winnings, Dealer has ~p~n", [DealerCards,UpdatedPlayer#player.balance*2, FinalDealer#player.handValue]), {Cards, FinalDealer, UpdatedPlayer}};
      FinalDealer#player.handValue > UpdatedPlayer#player.handValue -> {reply, io:format("Dealer Cards ~p~nDealer wins, has ~p~n", [DealerCards,FinalDealer#player.handValue]), {Cards, FinalDealer, UpdatedPlayer}};
-	 true ->  {reply, io:format("Tie, Dealer Cards ~p~nyour stake ~p returned~n", [DealerCards, UpdatedPlayer#player.balance*2]), {Cards, FinalDealer, UpdatedPlayer}}
+	 true ->  {reply, io:format("Tie, Dealer Cards ~p~nyour stake ~p returned~n", [DealerCards, UpdatedPlayer#player.balance]), {Cards, FinalDealer, UpdatedPlayer}}
   end;
  
 handle_call(terminate,_From, {Cards, Dealer, Player}) ->
@@ -115,7 +115,7 @@ ok.
 
 
 %%% private server functions to get cards / manage cards...ideally we have a seperate engine for the cards and table.
-dealer_twist(Cards, Dealer, DealerCards,  Player) when Dealer#player.handValue > 17, Dealer#player.alternateValue > 17 -> {Dealer, DealerCards};
+dealer_twist(Cards, Dealer, DealerCards,  Player) when Dealer#player.handValue > 16, Dealer#player.alternateValue > 16 -> {Dealer, DealerCards};
 dealer_twist(Cards, Dealer, DealerCards,  Player) when Dealer#player.handValue > Player#player.handValue, Dealer#player.alternateValue > Player#player.handValue -> {Dealer, DealerCards};
 dealer_twist(Cards, Dealer, DealerCards, Player) -> 
   Card = hd(Cards),
