@@ -46,8 +46,8 @@ handle_call({enter, Wager}, _From, {Cards, Dealer, Player}) ->
    NewDealer = blackjack_player:create_player("Dealer", Wager),
    UpdatedPlayer = NewPlayer#player{handValue=blackjack_deck:get_card_value(D1#card.value)+blackjack_deck:get_card_value(D2#card.value)
 	, alternateValue=blackjack_deck:get_alternate_card_value(D1#card.value)+blackjack_deck:get_alternate_card_value(D2#card.value)},
-   UpdatedDealer = NewDealer#player{handValue=blackjack_deck:get_card_value(D3#card.value)+blackjack_deck:get_card_value(D3#card.value)
-	, alternateValue=blackjack_deck:get_alternate_card_value(D4#card.value)+blackjack_deck:get_alternate_card_value(D4#card.value)},
+   UpdatedDealer = NewDealer#player{handValue=blackjack_deck:get_card_value(D3#card.value)+blackjack_deck:get_card_value(D4#card.value)
+	, alternateValue=blackjack_deck:get_alternate_card_value(D3#card.value)+blackjack_deck:get_alternate_card_value(D4#card.value)},
  if	UpdatedPlayer#player.handValue == 21; UpdatedPlayer#player.alternateValue == 21 -> {reply, io:format("Your Cards ~p,~p~nBlackJack - You Win ~p Winnings~n",[D1,D2,UpdatedPlayer#player.balance*2]), {Cards, Dealer, UpdatedPlayer}};
    true -> {reply,io:format("Your cards ~p,~p~nDealer cards ~p,~p~n", [D1, D2, D3, D4]), {Deck,UpdatedDealer, UpdatedPlayer}}
  end;  
