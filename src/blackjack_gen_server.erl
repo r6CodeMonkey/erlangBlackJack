@@ -99,17 +99,17 @@ handle_call({double_down, Wager}, _From, {Cards, Dealer, Player}) ->
  UpdatedPlayer = blackjack_player:update_card(Player,PlayerCard, Player#player.balance+Wager),
  UpdatedDealer = blackjack_player:update_card(Dealer,DealerCard, Dealer#player.balance+Wager),
  
- process_result(UpdatedPlayer, UpdatedDealer, Rest);
+ blackjack_table:process_result(UpdatedPlayer, UpdatedDealer, Rest);
   
 handle_call({stand}, _From, {Cards, Dealer, Player}) ->
 
- UpdatedPlayer = player_stand(Player),
+ UpdatedPlayer = blackjack_table:player_stand(Player),
  %% dealer plays.
- UpdatedDealer = dealer_twist(Cards, Dealer, UpdatedPlayer),
+ UpdatedDealer = blackjack_table:dealer_twist(Cards, Dealer, UpdatedPlayer),
  
- FinalDealer = player_stand(UpdatedDealer),
+ FinalDealer = blackjack_table:player_stand(UpdatedDealer),
   
- process_result(UpdatedPlayer,FinalDealer, Cards);
+ blackjack_table:process_result(UpdatedPlayer,FinalDealer, Cards);
  
 handle_call(terminate,_From, {Cards, Dealer, Player}) ->
  {stop, normal, ok, Cards}.
@@ -129,43 +129,5 @@ terminate(normal, Cards) ->
 ok.
 
 
-dealer_twist(Cards, Dealer,  Player) -> 
-  Card = hd(Cards),
-   UpdatedDealer = blackjack_player:update_card(Dealer, Card, Dealer#player.balance),
-   
-   HandValue = blackjack_player:get_hand_value(UpdatedDealer#player.cards,0),
-   AltValue = blackjack_player:get_alternate_hand_value(UpdatedDealer#player.cards,0),
-   
-   if HandValue > 16,AltValue > 16 -> UpdatedDealer;
-      HandValue < 21, HandValue >= Player#player.handValue; AltValue < 21, AltValue >= Player#player.handValue -> UpdatedDealer;
-	  true -> dealer_twist(tl(Cards),UpdatedDealer,  Player)
-end.
 
-player_stand(Player) -> 
-
-HandValue = blackjack_player:get_hand_value(Player#player.cards,0),
-AltValue = blackjack_player:get_alternate_hand_value(Player#player.cards,0),
-if HandValue > 21,AltValue > 21 -> 
-       UpdatedPlayer = Player#player{handValue=AltValue};
-   HandValue > 21 -> 
-       UpdatedPlayer = Player#player{handValue=AltValue};
-   AltValue > 21 -> 
-       UpdatedPlayer = Player#player{handValue=HandValue};
-   HandValue > AltValue -> 
-       UpdatedPlayer = Player#player{handValue=HandValue};
-   AltValue > HandValue -> 
-       UpdatedPlayer = Player#player{handValue=AltValue};
-   true -> UpdatedPlayer = Player#player{handValue=HandValue}
-  end.
-  
-  
-process_result(Player, Dealer, Cards) ->  
-  if Dealer#player.handValue > 21  -> 
-      {reply, io:format("You win ~p winnings~nYour Cards~p~nDealer Cards ~p~nDealer went bust~n", [Player#player.balance*2, Player#player.cards, Dealer#player.cards]), {Cards, Dealer, Player}};
-     Player#player.handValue > Dealer#player.handValue -> 
-	  {reply, io:format("Your Cards~p~nDealer Cards ~p~nYou win ~p winnings, Dealer has ~p~n", [Player#player.cards,Dealer#player.cards,Player#player.balance*2, Dealer#player.handValue]), {Cards, Dealer, Player}};
-     Dealer#player.handValue > Player#player.handValue -> 
-	  {reply, io:format("Your Cards~p~nDealer Cards ~p~nDealer wins, has ~p~n", [Player#player.cards,Dealer#player.cards,Dealer#player.handValue]), {Cards, Dealer, Player}};
-	 true ->  {reply, io:format("Tie,Your Cards~p~nDealer Cards ~p~nyour stake ~p returned~n", [Player#player.cards,Dealer#player.cards, Player#player.balance]), {Cards, Dealer, Player}}
-  end.
 
