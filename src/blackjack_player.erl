@@ -5,5 +5,15 @@
 
 create_player(Pid, Balance) -> #player{id=Pid, balance=Balance}.
 
-update_balance(Balance, Amount) -> Balance + Amount. 
+update_cards(Player, Card, Card2) ->
+Player#player{handValue=blackjack_deck:get_card_value(Card#card.value)+blackjack_deck:get_card_value(Card2#card.value)
+	, alternateValue=blackjack_deck:get_alternate_card_value(Card#card.value)+blackjack_deck:get_alternate_card_value(Card2#card.value)
+	, cards=[Card,Card2|Player#player.cards]}.
+
+update_card(Player, Card, Wager) ->
+Player#player{handValue=blackjack_deck:get_card_value(Card#card.value)+Player#player.handValue
+	, alternateValue=blackjack_deck:get_alternate_card_value(Card#card.value)+Player#player.alternateValue
+	,balance=Wager}.
+
+
 

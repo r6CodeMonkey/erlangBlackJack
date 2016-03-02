@@ -44,17 +44,16 @@ handle_call({enter, Wager}, _From, {Cards, Dealer, Player}) ->
    [D1,D2, D3, D4|Deck] = Cards,
    NewPlayer = blackjack_player:create_player(_From, Wager),
    NewDealer = blackjack_player:create_player("Dealer", Wager),
-   UpdatedPlayer = NewPlayer#player{handValue=blackjack_deck:get_card_value(D1#card.value)+blackjack_deck:get_card_value(D2#card.value)
-	, alternateValue=blackjack_deck:get_alternate_card_value(D1#card.value)+blackjack_deck:get_alternate_card_value(D2#card.value)},
-   UpdatedDealer = NewDealer#player{handValue=blackjack_deck:get_card_value(D3#card.value)+blackjack_deck:get_card_value(D4#card.value)
-	, alternateValue=blackjack_deck:get_alternate_card_value(D3#card.value)+blackjack_deck:get_alternate_card_value(D4#card.value)},
+   UpdatedPlayer = blackjack_player:update_cards(NewPlayer, D1, D2),
+   UpdatedDealer = blackjack_player:update_cards(NewDealer, D3, D4),  
+   
  if	UpdatedPlayer#player.handValue == 21; UpdatedPlayer#player.alternateValue == 21 -> {reply, io:format("Your Cards ~p,~p~nBlackJack - You Win ~p Winnings~n",[D1,D2,UpdatedPlayer#player.balance*2]), {Cards, Dealer, UpdatedPlayer}};
    true -> {reply,io:format("Your cards ~p,~p~nDealer cards ~p,~p~n", [D1, D2, D3, D4]), {Deck,UpdatedDealer, UpdatedPlayer}}
  end;  
 
 handle_call({hit}, _From, {Cards, Dealer, Player}) -> 
  Card = hd(Cards),
-	UpdatedPlayer = process_card(Player, Card, Player#player.balance), 
+	UpdatedPlayer = blackjack_player:update_card(Player, Card, Player#player.balance), 
  if UpdatedPlayer#player.handValue > 21, UpdatedPlayer#player.alternateValue > 21  -> {reply, io:format("Your Card ~p~nBust - Dealer Wins~n",[Card]), {Cards,Dealer, UpdatedPlayer}};
     UpdatedPlayer#player.handValue == 21; UpdatedPlayer#player.alternateValue == 21 -> {reply, io:format("Your Card ~p~nBlackJack - You Win ~p Winnings~n",[Card, UpdatedPlayer#player.balance*2]), {Cards, Dealer, UpdatedPlayer}};
    true -> {reply, {io:format("hand value ~p, alternate value ~p ~n",[UpdatedPlayer#player.handValue,UpdatedPlayer#player.alternateValue]), Card}, {tl(Cards),Dealer, UpdatedPlayer}}
@@ -64,25 +63,26 @@ handle_call({surrender}, _From, {Cards, Dealer, Player}) ->
  {reply, io:format("Returned ~p ~n", [Player#player.balance/2]), {Cards, Dealer, Player}};
 
 handle_call({split, wager}, _From, {Cards, Dealer, Player}) -> 
+%% the tricky one,  firstly are the cards the same....
  io:format("split call ~n", []);
 
 handle_call({double_down, Wager}, _From, {Cards, Dealer, Player}) ->
 
  [PlayerCard, DealerCard|Rest] = Cards,
- UpdatedPlayer = process_card(PlayerCard, Player, Player#player.balance+Wager),
- UpdatedDealer = process_card(DealerCard, Dealer, Dealer#player.balance+Wager),
+ UpdatedPlayer = blackjack_player:update_card(Player,PlayerCard, Player#player.balance+Wager),
+ UpdatedDealer = blackjack_player:update_card(Dealer,DealerCard, Dealer#player.balance+Wager),
  
- process_result(UpdatedPlayer, UpdatedDealer, [PlayerCard|DealerCard], Rest);
+ process_result(UpdatedPlayer, UpdatedDealer, Rest);
   
 handle_call({stand}, _From, {Cards, Dealer, Player}) ->
 
  UpdatedPlayer = player_stand(Player),
  %% dealer plays.
- {UpdatedDealer, DealerCards} = dealer_twist(Cards, Dealer,[], UpdatedPlayer),
+ UpdatedDealer = dealer_twist(Cards, Dealer, UpdatedPlayer),
  
  FinalDealer = dealer_stand(UpdatedDealer),
   
- process_result(UpdatedPlayer,FinalDealer, DealerCards, Cards);
+ process_result(UpdatedPlayer,FinalDealer, Cards);
  
 handle_call(terminate,_From, {Cards, Dealer, Player}) ->
  {stop, normal, ok, Cards}.
@@ -103,12 +103,12 @@ ok.
 
 
 %%% private server functions to get cards / manage cards...ideally we have a seperate engine for the cards and table.
-dealer_twist(Cards, Dealer, DealerCards,  Player) when Dealer#player.handValue > 16, Dealer#player.alternateValue > 16 -> {Dealer, DealerCards};
-dealer_twist(Cards, Dealer, DealerCards,  Player) when Dealer#player.handValue > Player#player.handValue, Dealer#player.alternateValue > Player#player.handValue -> {Dealer, DealerCards};
-dealer_twist(Cards, Dealer, DealerCards, Player) -> 
+dealer_twist(Cards, Dealer,  Player) when Dealer#player.handValue > 16, Dealer#player.alternateValue > 16 -> Dealer;
+dealer_twist(Cards, Dealer,  Player) when Dealer#player.handValue > Player#player.handValue, Dealer#player.alternateValue > Player#player.handValue -> Dealer;
+dealer_twist(Cards, Dealer,  Player) -> 
   Card = hd(Cards),
-   UpdatedDealer = process_card(Card, Dealer, Dealer#player.balance),
-  dealer_twist(tl(Cards),UpdatedDealer, [Card|DealerCards],  Player).
+   UpdatedDealer = blackjack_player:update_card(Dealer, Card, Dealer#player.balance),
+  dealer_twist(tl(Cards),UpdatedDealer,  Player).
 
 player_stand(Player) -> if Player#player.handValue > 21 -> UpdatedPlayer = Player#player{handValue=Player#player.alternateValue};
    Player#player.alternateValue > 21 -> UpdatedPlayer = Player#player{alternateValue=Player#player.handValue};
@@ -125,14 +125,10 @@ dealer_stand(Dealer) ->   if Dealer#player.handValue > 21,Dealer#player.alternat
    true -> FinalDealer = Dealer
   end.
   
-process_result(Player, Dealer, DealerCards, Cards) ->  
-  if Dealer#player.handValue > 21 -> {reply, io:format("You win ~p winnings,Dealer Cards ~p~nDealer went bust~n", [Player#player.balance*2, DealerCards]), {Cards, Dealer, Player}};
-     Player#player.handValue > Dealer#player.handValue -> {reply, io:format("Dealer Cards ~p~nYou win ~p winnings, Dealer has ~p~n", [DealerCards,Player#player.balance*2, Dealer#player.handValue]), {Cards, Dealer, Player}};
-     Dealer#player.handValue > Player#player.handValue -> {reply, io:format("Dealer Cards ~p~nDealer wins, has ~p~n", [DealerCards,Dealer#player.handValue]), {Cards, Dealer, Player}};
-	 true ->  {reply, io:format("Tie, Dealer Cards ~p~nyour stake ~p returned~n", [DealerCards, Player#player.balance]), {Cards, Dealer, Player}}
+process_result(Player, Dealer, Cards) ->  
+  if Dealer#player.handValue > 21 -> {reply, io:format("You win ~p winnings,Dealer Cards ~p~nDealer went bust~n", [Player#player.balance*2, Dealer#player.cards]), {Cards, Dealer, Player}};
+     Player#player.handValue > Dealer#player.handValue -> {reply, io:format("Dealer Cards ~p~nYou win ~p winnings, Dealer has ~p~n", [Dealer#player.cards,Player#player.balance*2, Dealer#player.handValue]), {Cards, Dealer, Player}};
+     Dealer#player.handValue > Player#player.handValue -> {reply, io:format("Dealer Cards ~p~nDealer wins, has ~p~n", [Dealer#player.cards,Dealer#player.handValue]), {Cards, Dealer, Player}};
+	 true ->  {reply, io:format("Tie, Dealer Cards ~p~nyour stake ~p returned~n", [Dealer#player.cards, Player#player.balance]), {Cards, Dealer, Player}}
   end.
 
-process_card(Card, Player, Wager) ->
-     Player#player{handValue=blackjack_deck:get_card_value(Card#card.value)+Player#player.handValue
-	, alternateValue=blackjack_deck:get_alternate_card_value(Card#card.value)+Player#player.alternateValue
-	,balance=Wager}.
