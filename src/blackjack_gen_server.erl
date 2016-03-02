@@ -49,9 +49,14 @@ handle_call({enter, Wager}, _From, {Cards, Dealer, Player}) ->
    
    HandValue = blackjack_player:get_hand_value(UpdatedPlayer#player.cards,0),
    AltValue = blackjack_player:get_alternate_hand_value(UpdatedPlayer#player.cards,0),
+   DealerHandValue = blackjack_player:get_hand_value(UpdatedDealer#player.cards,0),
+   DealerAltValue = blackjack_player:get_alternate_hand_value(UpdatedDealer#player.cards,0),
+   
    
  if	HandValue == 21; AltValue == 21 -> 
    {reply, io:format("Your Cards ~p,~p~nBlackJack - You Win ~p Winnings~n",[D1,D2,UpdatedPlayer#player.balance*2]), {Deck, Dealer, UpdatedPlayer}};
+   DealerHandValue == 21; DealerAltValue == 21 -> 
+   {reply, io:format("Your Cards ~p,~p~Dealer Has BlackJack - Stake Returned ~p~n",[D1,D2,UpdatedPlayer#player.balance]), {Deck, Dealer, UpdatedPlayer}};
    true -> {reply,io:format("Your cards ~p,~p~nDealer cards ~p,~p~n", [D1, D2, D3, D4]), {Deck,UpdatedDealer, UpdatedPlayer}}
  end;  
 
@@ -122,11 +127,11 @@ dealer_twist(Cards, Dealer,  Player) ->
   Card = hd(Cards),
    UpdatedDealer = blackjack_player:update_card(Dealer, Card, Dealer#player.balance),
    
-   HandValue = blackjack_player:get_hand_value(Dealer#player.cards,0),
-   AltValue = blackjack_player:get_alternate_hand_value(Dealer#player.cards,0),
+   HandValue = blackjack_player:get_hand_value(UpdatedDealer#player.cards,0),
+   AltValue = blackjack_player:get_alternate_hand_value(UpdatedDealer#player.cards,0),
    
    if HandValue > 16,AltValue > 16 -> UpdatedDealer;
-      HandValue > Player#player.handValue, AltValue > Player#player.handValue -> UpdatedDealer;
+      HandValue < 21, HandValue >= Player#player.handValue; AltValue < 21, AltValue >= Player#player.handValue -> UpdatedDealer;
 	  true -> dealer_twist(tl(Cards),UpdatedDealer,  Player)
 end.
 
