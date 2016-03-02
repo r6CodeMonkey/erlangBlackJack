@@ -28,6 +28,15 @@ get_alternate_hand_value([Card|Hand], Value) ->
 get_hand_value([], Value) -> Value; 
 get_hand_value([Card|Hand], Value) -> 
 get_hand_value(Hand, Value + blackjack_deck:get_card_value(Card#card.value)).
+
+
+get_max_value([], Max) -> Max;
+get_max_value(Values, Max) ->
+ TempMax = lists:max(Values),
+ if TempMax =< 21 -> TempMax;
+ true -> get_max_value(lists:delete(TempMax, Values),TempMax)
+ end.
+ 
  
 
 

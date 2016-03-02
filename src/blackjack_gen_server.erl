@@ -56,7 +56,7 @@ handle_call({enter, Wager}, _From, {Cards, Dealer, Player}) ->
  if	HandValue == 21; AltValue == 21 -> 
    {reply, io:format("Your Cards ~p,~p~nBlackJack - You Win ~p Winnings~n",[D1,D2,UpdatedPlayer#player.balance*2]), {Deck, Dealer, UpdatedPlayer}};
    DealerHandValue == 21; DealerAltValue == 21 -> 
-   {reply, io:format("Your Cards ~p,~p~Dealer Has BlackJack - Stake Returned ~p~n",[D1,D2,UpdatedPlayer#player.balance]), {Deck, Dealer, UpdatedPlayer}};
+   {reply, io:format("Your Cards ~p~p~nDealer Has BlackJack~n~p~p - Stake Returned ~p~n",[D1,D2,D3,D4,UpdatedPlayer#player.balance]), {Deck, UpdatedDealer, UpdatedPlayer}};
    true -> {reply,io:format("Your cards ~p,~p~nDealer cards ~p,~p~n", [D1, D2, D3, D4]), {Deck,UpdatedDealer, UpdatedPlayer}}
  end;  
 
@@ -77,7 +77,16 @@ end;
      UpdatedPlayer = blackjack_player:update_card(Player, Card, Player#player.balance),
 	 handle_call({hit}, _From, {tl(Cards), Dealer, UpdatedPlayer});
   true -> UpdatedPlayer = blackjack_player:update_split_card(Player, Card, Player#player.balance),
-    {reply,io:format("Cards ~p~n~p ~n",[UpdatedPlayer#player.cards,UpdatedPlayer#player.split_cards]), {tl(Cards),Dealer, UpdatedPlayer}}
+   %% now check to see if both hands bust...
+	HandValue = blackjack_player:get_hand_value(UpdatedPlayer#player.cards,0),
+	AltValue = blackjack_player:get_alternate_hand_value(UpdatedPlayer#player.cards,0),
+	SplitHandValue = blackjack_player:get_hand_value(UpdatedPlayer#player.split_cards,0),
+	SplitAltValue = blackjack_player:get_alternate_hand_value(UpdatedPlayer#player.split_cards,0),
+    
+	if HandValue > 21, SplitAltValue > 21, AltValue > 21, SplitHandValue > 21 -> {reply, io:format("~p~n~p~nBust - Dealer Wins~n",[UpdatedPlayer#player.cards, UpdatedPlayer#player.split_cards]), {Cards,Dealer, UpdatedPlayer}};
+       HandValue == 21; SplitAltValue == 21; AltValue == 21; SplitHandValue == 21 ->  {reply, io:format("~p~n~p~nBlackJack - You Win ~p Winnings~n",[UpdatedPlayer#player.cards, UpdatedPlayer#player.split_cards, UpdatedPlayer#player.balance*2]), {Cards, Dealer, UpdatedPlayer}};
+	 true -> {reply,io:format("Cards ~p~n~p ~n",[UpdatedPlayer#player.cards,UpdatedPlayer#player.split_cards]), {tl(Cards),Dealer, UpdatedPlayer}}
+	 end
   end
 end;
 
@@ -102,7 +111,6 @@ handle_call({double_down, Wager}, _From, {Cards, Dealer, Player}) ->
  blackjack_table:process_result(UpdatedPlayer, UpdatedDealer, Rest);
   
 handle_call({stand}, _From, {Cards, Dealer, Player}) ->
-
  UpdatedPlayer = blackjack_table:player_stand(Player),
  %% dealer plays.
  UpdatedDealer = blackjack_table:dealer_twist(Cards, Dealer, UpdatedPlayer),
