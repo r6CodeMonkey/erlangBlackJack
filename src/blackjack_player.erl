@@ -13,7 +13,8 @@ Player#player{handValue=blackjack_deck:get_card_value(Card#card.value)+blackjack
 update_card(Player, Card, Wager) ->
 Player#player{handValue=blackjack_deck:get_card_value(Card#card.value)+Player#player.handValue
 	, alternateValue=blackjack_deck:get_alternate_card_value(Card#card.value)+Player#player.alternateValue
-	,balance=Wager}.
+	,balance=Wager
+	,cards=[Card|Player#player.cards]}.
 
 
 

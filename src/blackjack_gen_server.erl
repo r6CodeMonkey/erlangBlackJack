@@ -47,7 +47,7 @@ handle_call({enter, Wager}, _From, {Cards, Dealer, Player}) ->
    UpdatedPlayer = blackjack_player:update_cards(NewPlayer, D1, D2),
    UpdatedDealer = blackjack_player:update_cards(NewDealer, D3, D4),  
    
- if	UpdatedPlayer#player.handValue == 21; UpdatedPlayer#player.alternateValue == 21 -> {reply, io:format("Your Cards ~p,~p~nBlackJack - You Win ~p Winnings~n",[D1,D2,UpdatedPlayer#player.balance*2]), {Cards, Dealer, UpdatedPlayer}};
+ if	UpdatedPlayer#player.handValue == 21; UpdatedPlayer#player.alternateValue == 21 -> {reply, io:format("Your Cards ~p,~p~nBlackJack - You Win ~p Winnings~n",[D1,D2,UpdatedPlayer#player.balance*2]), {Deck, Dealer, UpdatedPlayer}};
    true -> {reply,io:format("Your cards ~p,~p~nDealer cards ~p,~p~n", [D1, D2, D3, D4]), {Deck,UpdatedDealer, UpdatedPlayer}}
  end;  
 
@@ -56,15 +56,18 @@ handle_call({hit}, _From, {Cards, Dealer, Player}) ->
 	UpdatedPlayer = blackjack_player:update_card(Player, Card, Player#player.balance), 
  if UpdatedPlayer#player.handValue > 21, UpdatedPlayer#player.alternateValue > 21  -> {reply, io:format("Your Card ~p~nBust - Dealer Wins~n",[Card]), {Cards,Dealer, UpdatedPlayer}};
     UpdatedPlayer#player.handValue == 21; UpdatedPlayer#player.alternateValue == 21 -> {reply, io:format("Your Card ~p~nBlackJack - You Win ~p Winnings~n",[Card, UpdatedPlayer#player.balance*2]), {Cards, Dealer, UpdatedPlayer}};
-   true -> {reply, {io:format("hand value ~p, alternate value ~p ~n",[UpdatedPlayer#player.handValue,UpdatedPlayer#player.alternateValue]), Card}, {tl(Cards),Dealer, UpdatedPlayer}}
+   true -> {reply,{io:format("hand value ~p, alternate value ~p ~n",[UpdatedPlayer#player.handValue,UpdatedPlayer#player.alternateValue]), Card}, {tl(Cards),Dealer, UpdatedPlayer}}
 end;
 
 handle_call({surrender}, _From, {Cards, Dealer, Player}) -> 
  {reply, io:format("Returned ~p ~n", [Player#player.balance/2]), {Cards, Dealer, Player}};
 
-handle_call({split, wager}, _From, {Cards, Dealer, Player}) -> 
+handle_call({split}, _From, {Cards, Dealer, Player}) -> 
 %% the tricky one,  firstly are the cards the same....
- io:format("split call ~n", []);
+ [Card1, Card2 | Rest] = Player#player.cards,
+ if Card1#card.value == Card2#card.value ->  {reply, io:format("You can split deck~n", []), {Cards, Dealer, Player}};       
+  true -> {reply, io:format("You can not split deck~n", []), {Cards, Dealer, Player}}
+  end;
 
 handle_call({double_down, Wager}, _From, {Cards, Dealer, Player}) ->
 
@@ -126,9 +129,9 @@ dealer_stand(Dealer) ->   if Dealer#player.handValue > 21,Dealer#player.alternat
   end.
   
 process_result(Player, Dealer, Cards) ->  
-  if Dealer#player.handValue > 21 -> {reply, io:format("You win ~p winnings,Dealer Cards ~p~nDealer went bust~n", [Player#player.balance*2, Dealer#player.cards]), {Cards, Dealer, Player}};
-     Player#player.handValue > Dealer#player.handValue -> {reply, io:format("Dealer Cards ~p~nYou win ~p winnings, Dealer has ~p~n", [Dealer#player.cards,Player#player.balance*2, Dealer#player.handValue]), {Cards, Dealer, Player}};
-     Dealer#player.handValue > Player#player.handValue -> {reply, io:format("Dealer Cards ~p~nDealer wins, has ~p~n", [Dealer#player.cards,Dealer#player.handValue]), {Cards, Dealer, Player}};
-	 true ->  {reply, io:format("Tie, Dealer Cards ~p~nyour stake ~p returned~n", [Dealer#player.cards, Player#player.balance]), {Cards, Dealer, Player}}
+  if Dealer#player.handValue > 21 -> {reply, io:format("You win ~p winnings~nYour Cards~p~nDealer Cards ~p~nDealer went bust~n", [Player#player.balance*2, Player#player.cards, Dealer#player.cards]), {Cards, Dealer, Player}};
+     Player#player.handValue > Dealer#player.handValue -> {reply, io:format("Your Cards~p~nDealer Cards ~p~nYou win ~p winnings, Dealer has ~p~n", [Player#player.cards,Dealer#player.cards,Player#player.balance*2, Dealer#player.handValue]), {Cards, Dealer, Player}};
+     Dealer#player.handValue > Player#player.handValue -> {reply, io:format("Your Cards~p~nDealer Cards ~p~nDealer wins, has ~p~n", [Player#player.cards,Dealer#player.cards,Dealer#player.handValue]), {Cards, Dealer, Player}};
+	 true ->  {reply, io:format("Tie,Your Cards~p~nDealer Cards ~p~nyour stake ~p returned~n", [Player#player.cards,Dealer#player.cards, Player#player.balance]), {Cards, Dealer, Player}}
   end.
 
