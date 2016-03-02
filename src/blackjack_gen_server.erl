@@ -115,8 +115,16 @@ handle_call({double_down, Wager}, _From, {Cards, Dealer, Player}) ->
   
 handle_call({stand}, _From, {Cards, Dealer, Player}) ->
  UpdatedPlayer = blackjack_table:player_stand(Player),
+  
+  HandValue = blackjack_player:get_hand_value(Dealer#player.cards,0),
+  AltValue = blackjack_player:get_alternate_hand_value(Dealer#player.cards,0),
+  Max = blackjack_player:get_max_value([HandValue,AltValue], 0),
+  
+  if Max >= Player#player.handValue -> UpdatedDealer = Dealer;
  %% dealer plays.
- UpdatedDealer = blackjack_table:dealer_twist(Cards, Dealer, UpdatedPlayer),
+   true ->
+ UpdatedDealer = blackjack_table:dealer_twist(Cards, Dealer, UpdatedPlayer)
+ end,
  
  FinalDealer = blackjack_table:player_stand(UpdatedDealer),
   
