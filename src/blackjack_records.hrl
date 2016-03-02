@@ -1,3 +1,3 @@
--record(player, {id, handValue=0, alternateValue=0, balance, cards=[], split_cards=[]}).
+-record(player, {id, balance, cards=[], split_cards=[], handValue=0}).
 
 -record(card, {suit, value}).
