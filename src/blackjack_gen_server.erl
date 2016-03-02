@@ -61,8 +61,8 @@ handle_call({enter, Wager}, _From, {Cards, Dealer, Player}) ->
  end;  
 
 handle_call({hit}, _From, {Cards, Dealer, Player}) -> 
-if Player#player.split_cards == [] ->
  Card = hd(Cards),
+if Player#player.split_cards == [] ->
 	UpdatedPlayer = blackjack_player:update_card(Player, Card, Player#player.balance), 
 	HandValue = blackjack_player:get_hand_value(UpdatedPlayer#player.cards,0),
 	AltValue = blackjack_player:get_alternate_hand_value(UpdatedPlayer#player.cards,0),
@@ -72,7 +72,13 @@ if Player#player.split_cards == [] ->
 	 {reply, io:format("Your Card ~p~nBlackJack - You Win ~p Winnings~n",[Card, UpdatedPlayer#player.balance*2]), {Cards, Dealer, UpdatedPlayer}};
    true -> {reply,io:format("Cards ~p ~n",[UpdatedPlayer#player.cards]), {tl(Cards),Dealer, UpdatedPlayer}}
 end;
- true -> {reply, io:format("not implemented for split yet", []), {Cards, Dealer, Player}}
+ true -> 
+  if length(Player#player.cards) == length(Player#player.split_cards) -> 
+     UpdatedPlayer = blackjack_player:update_card(Player, Card, Player#player.balance),
+	 handle_call({hit}, _From, {tl(Cards), Dealer, UpdatedPlayer});
+  true -> UpdatedPlayer = blackjack_player:update_split_card(Player, Card, Player#player.balance),
+    {reply,io:format("Cards ~p~n~p ~n",[UpdatedPlayer#player.cards,UpdatedPlayer#player.split_cards]), {tl(Cards),Dealer, UpdatedPlayer}}
+  end
 end;
 
 handle_call({surrender}, _From, {Cards, Dealer, Player}) -> 
@@ -83,7 +89,7 @@ handle_call({split}, _From, {Cards, Dealer, Player}) ->
  [Card1, Card2 | Rest] = Player#player.cards,
  if Card1#card.value == Card2#card.value -> 
  UpdatedPlayer = blackjack_player:split_cards(Player),
- {reply, io:format("You can split deck~p~n~p~n", [UpdatedPlayer#player.cards, UpdatedPlayer#player.split_cards]), {Cards, Dealer, UpdatedPlayer}};       
+ {reply, io:format("~p~n~p~n", [UpdatedPlayer#player.cards, UpdatedPlayer#player.split_cards]), {Cards, Dealer, UpdatedPlayer}};       
   true -> {reply, io:format("You can not split deck~n", []), {Cards, Dealer, Player}}
   end;
 

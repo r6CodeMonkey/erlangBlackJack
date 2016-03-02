@@ -12,6 +12,10 @@ update_card(Player, Card, Wager) ->
 Player#player{balance=Wager
 	,cards=[Card|Player#player.cards]}.
 
+update_split_card(Player, Card, Wager) ->
+Player#player{balance=Wager
+   ,split_cards=[Card|Player#player.split_cards]}.	
+	
 split_cards(Player) ->
 [Card, Card2|Rest] = Player#player.cards,
 Player#player{cards=[Card], split_cards=[Card2]}.
