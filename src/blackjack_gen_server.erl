@@ -65,7 +65,9 @@ handle_call({surrender}, _From, {Cards, Dealer, Player}) ->
 handle_call({split}, _From, {Cards, Dealer, Player}) -> 
 %% the tricky one,  firstly are the cards the same....
  [Card1, Card2 | Rest] = Player#player.cards,
- if Card1#card.value == Card2#card.value ->  {reply, io:format("You can split deck~n", []), {Cards, Dealer, Player}};       
+ if Card1#card.value == Card2#card.value -> 
+ UpdatedPlayer = blackjack_player:split_cards(Player),
+ {reply, io:format("You can split deck~p~n~p~n", [UpdatedPlayer#player.cards, UpdatedPlayer#player.split_cards]), {Cards, Dealer, UpdatedPlayer}};       
   true -> {reply, io:format("You can not split deck~n", []), {Cards, Dealer, Player}}
   end;
 

@@ -16,5 +16,6 @@ Player#player{handValue=blackjack_deck:get_card_value(Card#card.value)+Player#pl
 	,balance=Wager
 	,cards=[Card|Player#player.cards]}.
 
-
+split_cards(Player) ->
+Player#player{cards=[hd(Player#player.cards)], split_cards=tl(Player#player.cards)}.
 
