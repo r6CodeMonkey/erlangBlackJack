@@ -1,0 +1,2 @@
+{decks, 4}.
+{houseRules, 16}.
