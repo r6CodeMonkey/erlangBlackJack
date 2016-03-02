@@ -28,11 +28,11 @@ Max = blackjack_player:get_max_value([HandValue,AltValue],0),
 Player#player{handValue=Max};
   
 true -> 
-deckValue = blackjack_player:get_hand_value(Player#player.cards,0),
-deckAltValue = blackjack_player:get_alternate_hand_value(Player#player.cards,0),
-splitValue = blackjack_player:get_hand_value(Player#player.split_cards,0),
-splitAltValue = blackjack_player:get_alternate_hand_value(Player#player.split_cards,0),
-Max = blackjack_player:get_max_value([deckValue,deckAltValue,splitValue,splitAltValue],0),
+DeckValue = blackjack_player:get_hand_value(Player#player.cards,0),
+DeckAltValue = blackjack_player:get_alternate_hand_value(Player#player.cards,0),
+SplitValue = blackjack_player:get_hand_value(Player#player.split_cards,0),
+SplitAltValue = blackjack_player:get_alternate_hand_value(Player#player.split_cards,0),
+Max = blackjack_player:get_max_value([DeckValue,DeckAltValue,SplitValue,SplitAltValue],0),
 Player#player{handValue=Max}
 end.
 
