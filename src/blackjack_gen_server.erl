@@ -108,7 +108,10 @@ handle_call({double_down, Wager}, _From, {Cards, Dealer, Player}) ->
  UpdatedPlayer = blackjack_player:update_card(Player,PlayerCard, Player#player.balance+Wager),
  UpdatedDealer = blackjack_player:update_card(Dealer,DealerCard, Dealer#player.balance+Wager),
  
- blackjack_table:process_result(UpdatedPlayer, UpdatedDealer, Rest);
+ FinalPlayer = blackjack_table:player_stand(UpdatedPlayer),
+ FinalDealer = blackjack_table:player_stand(UpdatedDealer),
+ 
+ blackjack_table:process_result(FinalPlayer, FinalDealer, Rest);
   
 handle_call({stand}, _From, {Cards, Dealer, Player}) ->
  UpdatedPlayer = blackjack_table:player_stand(Player),
