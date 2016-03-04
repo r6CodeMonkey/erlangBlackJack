@@ -10,7 +10,7 @@ Decks = blackjack_deck:create_decks(lists:seq(1,4), []),
 
 dealer_twist(Cards, Dealer,  Player) -> 
   Card = hd(Cards),
-   UpdatedDealer = blackjack_player:update_card(Dealer, Card, Dealer#player.balance),
+   UpdatedDealer = blackjack_player:update_player(Dealer, blackjack_player:update_cards([Card],Dealer#player.cards), [], Dealer#player.balance),
    
    HandValue = blackjack_player:get_hand_value(UpdatedDealer#player.cards,0),
    AltValue = blackjack_player:get_alternate_hand_value(UpdatedDealer#player.cards,0),
