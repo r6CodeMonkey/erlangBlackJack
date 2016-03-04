@@ -109,8 +109,8 @@ handle_call({split}, _From, {Cards, Dealer, Player}) ->
 handle_call({double_down, Wager}, _From, {Cards, Dealer, Player}) ->
 
  [PlayerCard, DealerCard|Rest] = Cards,
- UpdatedPlayer = blackjack_player:update_card(Player,PlayerCard, Player#player.balance+Wager),
- UpdatedDealer = blackjack_player:update_card(Dealer,DealerCard, Dealer#player.balance+Wager),
+ UpdatedPlayer = blackjack_player:update_player(Player, blackjack_player:update_cards([PlayerCard],Player#player.cards),[], Player#player.balance+Wager),
+ UpdatedDealer = blackjack_player:update_player(Dealer, blackjack_player:update_cards([DealerCard],Dealer#player.cards),[], Dealer#player.balance+Wager),
  
  FinalPlayer = blackjack_table:player_stand(UpdatedPlayer),
  FinalDealer = blackjack_table:player_stand(UpdatedDealer),
