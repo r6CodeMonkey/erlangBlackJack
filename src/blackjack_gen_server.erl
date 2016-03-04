@@ -80,7 +80,7 @@ end;
 	blackjack_player:update_player(Player, blackjack_player:update_cards([Card] ,Player#player.cards),Player#player.split_cards,Player#player.balance),
 	 handle_call({hit}, _From, {tl(Cards), Dealer, UpdatedPlayer});
   true -> UpdatedPlayer = 
-  	blackjack_player:update_player(Player, blackjack_player:update_cards([Card] ,Player#player.split_cards),Player#player.split_cards,Player#player.balance),
+  	blackjack_player:update_player(Player,Player#player.cards, blackjack_player:update_cards([Card] ,Player#player.split_cards),Player#player.balance),
    %% now check to see if both hands bust...
 	HandValue = blackjack_player:get_hand_value(UpdatedPlayer#player.cards,0),
 	AltValue = blackjack_player:get_alternate_hand_value(UpdatedPlayer#player.cards,0),
