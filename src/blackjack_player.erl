@@ -5,16 +5,13 @@
 
 create_player(Pid, Balance) -> #player{id=Pid, balance=Balance}.
 
-update_cards(Player, Card, Card2) ->
-Player#player{cards=[Card,Card2|Player#player.cards]}.
+update_player(Player, Cards, SplitCards, Wager) ->
+Player#player{cards=Cards, split_cards=SplitCards, balance=Wager}.
 
-update_card(Player, Card, Wager) ->
-Player#player{balance=Wager
-	,cards=[Card|Player#player.cards]}.
 
-update_split_card(Player, Card, Wager) ->
-Player#player{balance=Wager
-   ,split_cards=[Card|Player#player.split_cards]}.	
+update_cards([], Cards) -> Cards;
+update_cards([NewCard|Rest], Cards) ->
+ update_cards(Rest, [NewCard|Cards]).
 	
 split_cards(Player) ->
 [Card, Card2|Rest] = Player#player.cards,
