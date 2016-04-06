@@ -22,11 +22,10 @@ get_hand_value([Card|Hand], Acc) ->
 {Value,AltValue} = Card#card.numericValue,
  if Value /= AltValue ->
  %% if our acc is empty, then need to add a value to it.
-  HV = add_hand_value(Acc, Value, []),
-  UPD = lists:append(HV,add_hand_value(Acc, AltValue, []));
- true -> UPD = add_hand_value(Acc, Value, [])
+  HandValues = lists:append(add_hand_value(Acc, Value, []),add_hand_value(Acc, AltValue, []));
+ true -> HandValues = add_hand_value(Acc, Value, [])
   end,
-get_hand_value(Hand, UPD).
+get_hand_value(Hand, HandValues).
 
 add_hand_value([],_, Acc) -> lists:reverse(Acc);
 add_hand_value([Hand|Alt], Value, Acc) ->
