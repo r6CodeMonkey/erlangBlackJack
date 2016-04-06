@@ -17,16 +17,23 @@ split_cards(Player) ->
 [Card, Card2|Rest] = Player#player.cards,
 Player#player{cards=[Card], split_cards=[Card2]}.
 
-get_alternate_hand_value([], Value) -> Value;
-get_alternate_hand_value([Card|Hand], Value) -> 
- get_alternate_hand_value(Hand, Value+blackjack_deck:get_alternate_card_value(Card#card.value)).
+get_hand_value([], Acc) -> lists:reverse(Acc); 
+get_hand_value([Card|Hand], Acc) -> 
+{Value,AltValue} = Card#card.numericValue,
+ if Value /= AltValue ->
+ %% if our acc is empty, then need to add a value to it.
+  HV = add_hand_value(Acc, Value, []),
+  UPD = lists:append(HV,add_hand_value(Acc, AltValue, []));
+ true -> UPD = add_hand_value(Acc, Value, [])
+  end,
+get_hand_value(Hand, UPD).
 
+add_hand_value([],_, Acc) -> lists:reverse(Acc);
+add_hand_value([Hand|Alt], Value, Acc) ->
+V = Hand#handValue.value + Value,
+add_hand_value(Alt, Value, lists:append(Acc, [#handValue{value=V}])).
 
-get_hand_value([], Value) -> Value; 
-get_hand_value([Card|Hand], Value) -> 
-get_hand_value(Hand, Value + blackjack_deck:get_card_value(Card#card.value)).
-
-
+%% we do need it on split.
 get_max_value([], Max) -> Max;
 get_max_value(Values, Max) ->
  TempMax = lists:max(Values),

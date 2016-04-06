@@ -49,14 +49,12 @@ handle_call({enter, Wager}, _From, {Cards, Dealer, Player}) ->
    UpdatedDealer = blackjack_player:update_player(NewDealer, blackjack_player:update_cards([D3,D4] ,NewDealer#player.cards),[],NewDealer#player.balance),  
    
    HandValue = blackjack_player:get_hand_value(UpdatedPlayer#player.cards,0),
-   AltValue = blackjack_player:get_alternate_hand_value(UpdatedPlayer#player.cards,0),
    DealerHandValue = blackjack_player:get_hand_value(UpdatedDealer#player.cards,0),
-   DealerAltValue = blackjack_player:get_alternate_hand_value(UpdatedDealer#player.cards,0),
    
    
- if	HandValue == 21; AltValue == 21 -> 
+ if	HandValue == 21 -> 
    {reply, io:format("Your Cards ~p,~p~nBlackJack - You Win ~p Winnings~n",[D1,D2,UpdatedPlayer#player.balance*2]), {Deck, Dealer, UpdatedPlayer}};
-   DealerHandValue == 21; DealerAltValue == 21 -> 
+   DealerHandValue == 21 -> 
    {reply, io:format("Your Cards ~p~p~nDealer Has BlackJack~n~p~p - Stake Returned ~p~n",[D1,D2,D3,D4,UpdatedPlayer#player.balance]), {Deck, UpdatedDealer, UpdatedPlayer}};
    true -> {reply,io:format("Your cards ~p,~p~nDealer cards ~p,~p~n", [D1, D2, D3, D4]), {Deck,UpdatedDealer, UpdatedPlayer}}
  end;  
@@ -67,10 +65,9 @@ if Player#player.split_cards == [] ->
 	UpdatedPlayer = 
 	blackjack_player:update_player(Player, blackjack_player:update_cards([Card] ,Player#player.cards),Player#player.split_cards,Player#player.balance),
 	HandValue = blackjack_player:get_hand_value(UpdatedPlayer#player.cards,0),
-	AltValue = blackjack_player:get_alternate_hand_value(UpdatedPlayer#player.cards,0),
- if HandValue > 21, AltValue > 21  -> 
+ if HandValue > 21  -> 
      {reply, io:format("Your Card ~p~nBust - Dealer Wins~n",[Card]), {Cards,Dealer, UpdatedPlayer}};
-    HandValue == 21; AltValue == 21 -> 
+    HandValue == 21 -> 
 	 {reply, io:format("Your Card ~p~nBlackJack - You Win ~p Winnings~n",[Card, UpdatedPlayer#player.balance*2]), {Cards, Dealer, UpdatedPlayer}};
    true -> {reply,io:format("Cards ~p ~n",[UpdatedPlayer#player.cards]), {tl(Cards),Dealer, UpdatedPlayer}}
 end;
@@ -83,12 +80,10 @@ end;
   	blackjack_player:update_player(Player,Player#player.cards, blackjack_player:update_cards([Card] ,Player#player.split_cards),Player#player.balance),
    %% now check to see if both hands bust...
 	HandValue = blackjack_player:get_hand_value(UpdatedPlayer#player.cards,0),
-	AltValue = blackjack_player:get_alternate_hand_value(UpdatedPlayer#player.cards,0),
 	SplitHandValue = blackjack_player:get_hand_value(UpdatedPlayer#player.split_cards,0),
-	SplitAltValue = blackjack_player:get_alternate_hand_value(UpdatedPlayer#player.split_cards,0),
     
-	if HandValue > 21, SplitAltValue > 21, AltValue > 21, SplitHandValue > 21 -> {reply, io:format("~p~n~p~nBust - Dealer Wins~n",[UpdatedPlayer#player.cards, UpdatedPlayer#player.split_cards]), {Cards,Dealer, UpdatedPlayer}};
-       HandValue == 21; SplitAltValue == 21; AltValue == 21; SplitHandValue == 21 ->  {reply, io:format("~p~n~p~nBlackJack - You Win ~p Winnings~n",[UpdatedPlayer#player.cards, UpdatedPlayer#player.split_cards, UpdatedPlayer#player.balance*2]), {Cards, Dealer, UpdatedPlayer}};
+	if HandValue > 21, SplitAltValue > 21 -> {reply, io:format("~p~n~p~nBust - Dealer Wins~n",[UpdatedPlayer#player.cards, UpdatedPlayer#player.split_cards]), {Cards,Dealer, UpdatedPlayer}};
+       HandValue == 21; SplitAltValue == 21 ->  {reply, io:format("~p~n~p~nBlackJack - You Win ~p Winnings~n",[UpdatedPlayer#player.cards, UpdatedPlayer#player.split_cards, UpdatedPlayer#player.balance*2]), {Cards, Dealer, UpdatedPlayer}};
 	 true -> {reply,io:format("Cards ~p~n~p ~n",[UpdatedPlayer#player.cards,UpdatedPlayer#player.split_cards]), {tl(Cards),Dealer, UpdatedPlayer}}
 	 end
   end
@@ -121,10 +116,8 @@ handle_call({stand}, _From, {Cards, Dealer, Player}) ->
  UpdatedPlayer = blackjack_table:player_stand(Player),
   
   HandValue = blackjack_player:get_hand_value(Dealer#player.cards,0),
-  AltValue = blackjack_player:get_alternate_hand_value(Dealer#player.cards,0),
-  Max = blackjack_player:get_max_value([HandValue,AltValue], 0),
   
-  if Max >= UpdatedPlayer#player.handValue -> UpdatedDealer = Dealer;
+  if HandValue >= UpdatedPlayer#player.handValue -> UpdatedDealer = Dealer;
  %% dealer plays.
    true ->
  UpdatedDealer = blackjack_table:dealer_twist(Cards, Dealer, UpdatedPlayer)

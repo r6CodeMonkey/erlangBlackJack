@@ -13,13 +13,16 @@ create_deck([Suit|Tail], Acc) ->
 
 create_suit([],Suit, Acc) -> 
 %% add in our face cards and ace.
-   lists:reverse([#card{suit=Suit, value="Jack"},#card{suit=Suit, value="Queen"},#card{suit=Suit, value="King"},#card{suit=Suit, value="Ace"}|Acc]);
+   lists:reverse([#card{suit=Suit, value="Jack", numericValue={10,10}},
+                  #card{suit=Suit, value="Queen", numericValue={10,10}},
+				  #card{suit=Suit, value="King", numericValue={10,10}},
+				  #card{suit=Suit, value="Ace", numericValue={11,1}}|Acc]);
 create_suit([Value|Rest], Suit, Acc) ->
- create_suit(Rest, Suit, [#card{suit=Suit, value=Value}|Acc]).
+ create_suit(Rest, Suit, [#card{suit=Suit, value=Value, numericValue={Value,Value}}|Acc]).
 
 shuffle([],Deck) -> lists:reverse(Deck);
 shuffle([Shuffle|Tail], Deck) ->
-random:seed(now()),
+random:seed(erlang:monontic_time()),
 %% need to randomly shuffle cards..we dont want to split at 52 clearly. hence take 1 off.
 {First, Second} = lists:split(random:uniform(length(Deck)-1), Deck),
 {Third, Fourth} = lists:split(random:uniform(length(First)), First),
@@ -27,19 +30,3 @@ random:seed(now()),
 
 shuffle(Tail, lists:append(lists:append(Sixth, Third),lists:append(Fifth, Fourth))).
 
-
-get_card_value(Card) ->
- if Card == "Ace" -> 1; 
-    Card == "King" -> 10;
-    Card == "Queen" -> 10;
-    Card == "Jack" -> 10;
-	true -> Card
-end.	
-
-get_alternate_card_value(Card) ->
- if Card == "Ace" -> 11; 
-    Card == "King" -> 10;
-    Card == "Queen" -> 10;
-    Card == "Jack" -> 10;
-	true -> Card
-end.	
