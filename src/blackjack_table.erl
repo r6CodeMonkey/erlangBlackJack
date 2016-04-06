@@ -12,7 +12,7 @@ dealer_twist(Cards, Dealer,  Player) ->
   Card = hd(Cards),
    UpdatedDealer = blackjack_player:update_player(Dealer, blackjack_player:update_cards([Card],Dealer#player.cards), [], Dealer#player.balance),
    
-   HandValue = blackjack_player:get_hand_value(UpdatedDealer#player.cards,0),
+   HandValues = blackjack_player:get_hand_values(UpdatedDealer#player.cards,[]),
    
    if HandValue > 16 -> UpdatedDealer;
       HandValue < 21, HandValue >= Player#player.handValue -> UpdatedDealer;
@@ -21,12 +21,12 @@ end.
 
 player_stand(Player) -> 
 if Player#player.split_cards == [] ->
-HandValue = blackjack_player:get_hand_value(Player#player.cards,0),
+HandValues = blackjack_player:get_hand_values(Player#player.cards,[]),
 Player#player{handValue=HandValue};
   
 true -> 
-DeckValue = blackjack_player:get_hand_value(Player#player.cards,0),
-SplitValue = blackjack_player:get_hand_value(Player#player.split_cards,0),
+DeckValues = blackjack_player:get_hand_values(Player#player.cards,[]),
+SplitValues = blackjack_player:get_hand_values(Player#player.split_cards,[]),
 Max = blackjack_player:get_max_value([DeckValue,SplitValue],0),
 Player#player{handValue=Max}
 end.
