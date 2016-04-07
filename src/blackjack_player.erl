@@ -42,11 +42,13 @@ add_hand_value(Alt, Value, lists:append(Acc, [#handValue{value=Hand#handValue.va
 
 %% we do need it on split.
 get_max_value([], Max) -> Max;
-get_max_value(Values, Max) ->
- TempMax = lists:max(Values),
- if TempMax =< 21 -> TempMax;
- true -> get_max_value(lists:delete(TempMax, Values),TempMax)
+get_max_value([Values|Rest], Max) ->
+ TempMax = Values#handValue.value,
+ if TempMax >= Max -> get_max_value(Rest, TempMax);
+ true -> get_max_value(Rest,Max)
  end.
+ 
+
  
  
 
